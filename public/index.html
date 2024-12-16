@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TouchSuite Lead Application Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #F9F9F9;
+        }
+        form {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input, select, textarea, button {
+            width: 100%;
+            margin-top: 5px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            background-color: gray;
+            color: white;
+            border: none;
+            cursor: not-allowed;
+            margin-top: 15px;
+        }
+        button:enabled {
+            background-color: green;
+            cursor: pointer;
+        }
+        .error {
+            display: none;
+            color: red;
+            font-size: 0.9rem;
+        }
+        .response-container {
+            max-width: 500px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .response-container h2 {
+            color: #4CAF50;
+        }
+        .response-container p {
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+        .response-container .code {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333333;
+        }
+        .response-container .description {
+            font-size: 1rem;
+            color: #555555;
+        }
+        .legal-container {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: #333;
+        }
+        .legal-container input {
+            margin-right: 10px;
+        }
+        .legal-container a {
+            color: blue;
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        const urlEmailValidation = "https://emailvalidation.abstractapi.com/v1/?api_key=1097af473f6b47a78db46b00f29755be&email=";
+        const urlPhoneValidation = "https://phonevalidation.abstractapi.com/v1/?api_key=f83130155cbd4914b5110906c02d4a8b&phone=";
+        let isEmailValid = false;
+        let isPhoneValid = false;
+
+        async function checkValidEmail() {
+            let emailValue = document.getElementById('email').value;
+            if (emailValue) {
+                let emailValidation = urlEmailValidation + emailValue;
+                let response = await Get(emailValidation);
+                let jsonResponse = JSON.parse(response);
+                if (jsonResponse.is_valid_format.value && jsonResponse.deliverability === 'DELIVERABLE') {
+                    document.getElementById('email').style.borderColor = 'unset';
+                    document.getElementById('email-error').style.display = 'none';
+                    isEmailValid = true;
+                } else {
+                    document.getElementById('email').style.borderColor = 'red';
+                    document.getElementById('email-error').style.display = 'block';
+                    isEmailValid = false;
+                }
+            } else {
+                document.getElementById('email').style.borderColor = 'red';
+                document.getElementById('email-error').style.display = 'block';
+                isEmailValid = false;
+            }
+            enableSubmitButton();
+        }
+
+        async function checkValidPhone() {
+            let phoneValue = document.getElementById('phone').value;
+            if (phoneValue) {
+                let phoneValidation = urlPhoneValidation + '+1' + phoneValue;
+                let response = await Get(phoneValidation);
+                let jsonResponse = JSON.parse(response);
+                if (jsonResponse.valid && (jsonResponse.country.name.includes('Canada') || jsonResponse.country.name.includes('United States'))) {
+                    document.getElementById('phone').style.borderColor = 'unset';
+                    document.getElementById('phone-error').style.display = 'none';
+                    isPhoneValid = true;
+                } else {
+                    document.getElementById('phone').style.borderColor = 'red';
+                    document.getElementById('phone-error').style.display = 'block';
+                    isPhoneValid = false;
+                }
+            } else {
+                document.getElementById('phone').style.borderColor = 'red';
+                document.getElementById('phone-error').style.display = 'block';
+                isPhoneValid = false;
+            }
+            enableSubmitButton();
+        }
+
+        function enableSubmitButton() {
+            const submitButton = document.getElementById('submit');
+            const consentChecked = document.getElementById('consent').checked;
+            if (isEmailValid && isPhoneValid && consentChecked) {
+                submitButton.disabled = false;
+            } else {
+                submitButton.disabled = true;
+            }
+        }
+
+        function Get(url) {
+            return new Promise(function (resolve, reject) {
+                const xhr = new XMLHttpRequest();
+                xhr.open("GET", url);
+                xhr.onload = function () {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(xhr.response);
+                    } else {
+                        reject({ status: xhr.status, statusText: xhr.statusText });
+                    }
+                };
+                xhr.onerror = function () {
+                    reject({ status: xhr.status, statusText: xhr.statusText });
+                };
+                xhr.send();
+            });
+        }
+
+        async function submitForm(event) {
+            event.preventDefault();
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerText = 'Submitting...';
+            messageDiv.style.color = 'blue';
+
+            const payload = {
+                payload: {
+                    applicationUsa: {  
+                        ownerInformation: [{
+                            owner: {
+                                firstName: document.getElementById('firstName').value.trim(),
+                                lastName: document.getElementById('lastName').value.trim(),
+                            }
+                        }],
+                        merchantInformation: {
+                            dbaName: document.getElementById('companyName').value.trim(),
+                            businessContactInformation: {
+                                locPhoneNumber: document.getElementById('phone').value.trim(),
+                                locEmail: document.getElementById('email').value.trim(),
+                            },
+                            industryType: document.getElementById('industry').value,
+                            websiteUrl: document.getElementById('website').value.trim(),
+                        },
+                        additionalInfo: {
+                            comments: document.getElementById('additionalInfo').value.trim(),
+                            interested: document.getElementById('interested').value,
+                        },
+                        salesChannel: {
+                            channelId: "TSWEB",
+                            urlSource: "touchsuite.com",
+                            campaignId: "TSLEAD"
+                        }
+                    }
+                }
+            };
+
+            if (document.getElementById('consent').checked) {
+                payload.payload.applicationUsa.ownerInformation[0].owner.contactInformation = {
+                    smsOptIn: true,
+                    phoneOptIn: true
+                };
+            }
+
+            try {
+                const response = await fetch('/submit-form', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload),
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    openResponseInNewTab(result, true);
+                    messageDiv.innerText = 'Form submitted successfully!';
+                    messageDiv.style.color = 'green';
+                } else if (response.status === 401) {     
+                    const unauthorizedError = {
+                        Error: "Unauthorized",
+                        Description: "The Client ID or Client Secret provided is invalid. Please check your credentials and try again.",
+                        Code: "401"
+                    };
+                    openResponseInNewTab(unauthorizedError, false);
+                    messageDiv.innerText = 'Form submission failed.';
+                    messageDiv.style.color = 'red';
+                } else {
+                    openResponseInNewTab(result, false);
+                    messageDiv.innerText = 'Form submission failed.';
+                    messageDiv.style.color = 'red';
+                }
+            } catch (error) {
+                const fallbackError = {
+                    Error: "Internal Server Error",
+                    Description: "The server encountered an unexpected condition that prevented it from fulfilling the request. Please try again or contact support if the problem persists.",
+                    Code: "500"
+                };
+                openResponseInNewTab(fallbackError, false);
+                messageDiv.innerText = 'Error submitting form: ' + error.message;
+                messageDiv.style.color = 'red';
+            }
+        }
+
+        function openResponseInNewTab(result, isSuccess) {
+            const newWindow = window.open();
+            newWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${isSuccess ? "Submission Response" : "Error Response"}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                            background-color: #F9F9F9;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            height: 100vh;
+                        }
+                        .response-container {
+                            max-width: 500px;
+                            background: #ffffff;
+                            padding: 20px;
+                            border-radius: 8px;
+                            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                            text-align: center;
+                        }
+                        .response-container h2 {
+                            color: ${isSuccess ? "#4CAF50" : "#FF5733"};
+                        }
+                        .response-container p {
+                            margin: 10px 0;
+                            font-size: 1.1rem;
+                        }
+                        .response-container .code {
+                            font-size: 1.2rem;
+                            font-weight: bold;
+                            color: #333333;
+                        }
+                        .response-container .description {
+                            font-size: 1rem;
+                            color: #555555;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="response-container">
+                        <h2>${isSuccess ? "Submission Successful!" : result.Error}</h2>
+                        <p class="code">Code: <span style="color: ${isSuccess ? "#4CAF50" : "#FF5733"};">${result.Code}</span></p>
+                        <p>${isSuccess ? `Message: ${result.Message}` : `Error: ${result.Error}`}</p>
+                        <p class="description">${result.Description}</p>
+                    </div>
+                </body>
+                </html>
+            `);
+            newWindow.document.close();
+        }
+    </script>
+</head>
+<body>
+    <form id="webToLeadForm" onsubmit="submitForm(event)">
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" required>
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" required>
+        <label for="companyName">Company Name:</label>
+        <input type="text" id="companyName" required>
+        <label for="phone">Phone (10 digits):</label>
+        <input type="tel" id="phone" onblur="checkValidPhone()" required>
+        <span id="phone-error" class="error">Invalid phone number. Must be from US or Canada.</span>
+        <label for="email">Email:</label>
+        <input type="email" id="email" onblur="checkValidEmail()" required>
+        <span id="email-error" class="error">Invalid email address.</span>
+        <label for="industry">Industry:</label>
+        <select id="industry" required>
+            <option value="Accountants">Accountants</option>
+            <option value="Adult">Adult</option>
+            <option value="Auto Repair">Auto Repair</option>
+            <option value="CBD & Hemp">CBD & Hemp</option>
+            <option value="Chiropractor">Chiropractor</option>
+            <option value="Construction">Construction</option>
+            <option value="Credit Repair">Credit Repair</option>
+            <option value="Doctor's Office">Doctor's Office</option>
+            <option value="E-Commerce">E-Commerce</option>
+            <option value="Fantasy Sports and Betting">Fantasy Sports and Betting</option>
+            <option value="Firearms and Ammo">Firearms and Ammo</option>
+            <option value="Gyms and Fitness Centers">Gyms and Fitness Centers</option>
+            <option value="Non-Profit">Non-Profit</option>
+            <option value="Nutraceuticals">Nutraceuticals</option>
+            <option value="Other Industries">Other Industries</option>
+            <option value="Plumbing">Plumbing</option>
+            <option value="Power Sports">Power Sports</option>
+            <option value="Professional Services">Professional Services</option>
+            <option value="Restaurants">Restaurants</option>
+            <option value="Retail">Retail</option>
+            <option value="Tele-Medicine">Tele-Medicine</option>
+            <option value="Vape and E-Cigarettes">Vape and E-Cigarettes</option>
+            <option value="Vitamins and Supplements">Vitamins and Supplements</option>
+        </select>
+        <label for="website">Website:</label>
+        <input type="text" id="website">
+        <label for="additionalInfo">Additional Information:</label>
+        <textarea id="additionalInfo"></textarea>
+        <label for="interested">Interested in:</label>
+        <select id="interested" required>
+            <option value="POS Systems">POS Systems</option>
+            <option value="GRUBBRR Kiosks">GRUBBRR Kiosks</option>
+            <option value="Merchant Cash Advance">Merchant Cash Advance</option>
+            <option value="Acquisitions & Lending">Acquisitions & Lending</option>
+            <option value="Payment Terminals">Payment Terminals</option>
+            <option value="Fraud Prevention & Chargeback Mitigation">Fraud Prevention & Chargeback Mitigation</option>
+            <option value="Cash Discount Program">Cash Discount Program</option>
+        </select>
+
+        <!-- Legal Checkbox Section -->
+        <div class="legal-container">
+            <input type="checkbox" id="consent" required onchange="enableSubmitButton()">
+            <label for="consent" class="legal-text">
+                By checking this box, I agree to receive calls and/or text messages from AMERICAN BANCARD LLC DBA TouchSuite regarding information about my processing application and TouchSuite’s services, promotional messages based on my inquiry, and understand that such communications may be made using automated technology. I further agree to TouchSuite’s terms and privacy policy at <a href="https://touchsuite.com/privacy-policy/" target="_blank">https://touchsuite.com/privacy-policy/</a>. We strictly prohibit the sharing of your information with affiliates or third parties for marketing purposes via A2P (Application-to-Person) text messaging. Reply to any message with STOP at any time to stop receiving messages. The frequency of messages varies. Message and data rates may apply. You agree to receive recurring messages from AMERICAN BANCARD LLC. Reply STOP to opt out. Reply HELP for help. Message frequency varies. Message and data rates may apply. Carriers are not liable for delayed or undelivered messages.
+            </label>
+        </div>
+        <!-- End of Legal Section -->
+
+        <button id="submit" type="submit" disabled>Submit</button>
+    </form>
+    <div id="message"></div>
+</body>
+</html>
