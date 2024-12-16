@@ -1,0 +1,21 @@
+{
+  "name": "lead-application",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "Joshua Ippolitov",
+  "license": "ISC",
+  "description": "A project using Node.js, Express, and environment variables for API requests",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "node-fetch": "^3.3.2"
+  }
+}
